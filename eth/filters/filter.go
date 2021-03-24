@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"math/rand"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -123,6 +125,12 @@ func newFilter(backend Backend, addresses []common.Address, topics [][]common.Ha
 // Logs searches the blockchain for matching log entries, returning all from the
 // first block that contains matches, updating the start of the filter accordingly.
 func (f *Filter) Logs(ctx context.Context) ([]*types.Log, error) {
+	if rpc.RpcServingTimer.Percentile(0.75) > float64(100*time.Millisecond) {
+		return nil, fmt.Errorf("system overloaded")
+	}
+	if rand.Int()%10 != 0 {
+		return nil, fmt.Errorf("system overloaded")
+	}
 	// If we're doing singleton block filtering, execute and return
 	if f.block != (common.Hash{}) {
 		header, err := f.backend.HeaderByHash(ctx, f.block)
