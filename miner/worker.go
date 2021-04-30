@@ -764,6 +764,7 @@ LOOP:
 					inc:   true,
 				}
 			}
+			log.Info("commitTransactions abort for commitInterruptNewHead")
 			return atomic.LoadInt32(interrupt) == commitInterruptNewHead
 		}
 		// If we don't have enough gas for any further transactions then we're done
@@ -782,6 +783,7 @@ LOOP:
 		// Retrieve the next transaction and abort if all done
 		tx := txs.Peek()
 		if tx == nil {
+			log.Info("txs.Peek return nil")
 			break
 		}
 		// Error may be ignored here. The error has already been checked
@@ -804,7 +806,7 @@ LOOP:
 		switch err {
 		case core.ErrGasLimitReached:
 			// Pop the current out-of-gas transaction without shifting in the next from the account
-			log.Trace("Gas limit exceeded for current block", "sender", from)
+			log.Info("Gas limit exceeded for current block", "sender", from)
 			txs.Pop()
 
 		case core.ErrNonceTooLow:
@@ -826,7 +828,7 @@ LOOP:
 		default:
 			// Strange error, discard the transaction and get the next in line (note, the
 			// nonce-too-high clause will prevent us from executing in vain).
-			log.Debug("Transaction failed, account skipped", "hash", tx.Hash(), "err", err)
+			log.Info("Transaction failed, account skipped", "hash", tx.Hash(), "err", err)
 			txs.Shift()
 		}
 	}
@@ -953,6 +955,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	if err != nil {
 		log.Error("Failed to fetch pending transactions", "err", err)
 	}
+	log.Info("commitNewWork", "total_pending", len(pending))
 	// Short circuit if there is no available pending transactions
 	if len(pending) != 0 {
 		start := time.Now()
@@ -964,12 +967,14 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 				localTxs[account] = txs
 			}
 		}
+		log.Info("commitNewWork", "total_localTxs", len(localTxs))
 		if len(localTxs) > 0 {
 			txs := types.NewTransactionsByPriceAndNonce(w.current.signer, localTxs)
 			if w.commitTransactions(txs, w.coinbase, interrupt) {
 				return
 			}
 		}
+		log.Info("commitNewWork", "total_remoteTxs", len(remoteTxs))
 		if len(remoteTxs) > 0 {
 			txs := types.NewTransactionsByPriceAndNonce(w.current.signer, remoteTxs)
 			if w.commitTransactions(txs, w.coinbase, interrupt) {

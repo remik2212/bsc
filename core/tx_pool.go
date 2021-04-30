@@ -492,6 +492,7 @@ func (pool *TxPool) Pending() (map[common.Address]types.Transactions, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
+	log.Info("tx_pool", "total_pool.pending", len(pool.pending))
 	pending := make(map[common.Address]types.Transactions)
 	for addr, list := range pool.pending {
 		pending[addr] = list.Flatten()
@@ -1489,6 +1490,7 @@ func (as *accountSet) addTx(tx *types.Transaction) {
 // reuse. The returned slice should not be changed!
 func (as *accountSet) flatten() []common.Address {
 	if as.cache == nil {
+		log.Info("tx_pool", "total_as.accounts", len(as.accounts))
 		accounts := make([]common.Address, 0, len(as.accounts))
 		for account := range as.accounts {
 			accounts = append(accounts, account)
