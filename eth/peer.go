@@ -203,8 +203,8 @@ func (p *peer) broadcastTransactions() {
 		case <-done:
 			done = nil
 
-		case <-fail:
-			return
+		case err := <-fail:
+			p.Log().Trace("Sent transactions failed", "err", err)
 
 		case <-p.term:
 			return
