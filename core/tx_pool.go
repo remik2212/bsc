@@ -1033,6 +1033,9 @@ func (pool *TxPool) runReorg(done chan struct{}, reset *txpoolResetRequest, dirt
 	if dirtyAccounts != nil {
 		promoteAddrs = dirtyAccounts.flatten()
 	}
+	log.Info("====debug try runReorg")
+	defer log.Info("====debug finish runReorg")
+
 	pool.mu.Lock()
 	if reset != nil {
 		// Reset from the old head to the new, rescheduling any reorged transactions
@@ -1181,6 +1184,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Transaction {
 	// Track the promoted transactions to broadcast them at once
 	var promoted []*types.Transaction
+	log.Info("====debug run promoteExecutables")
 
 	// Iterate over all accounts and promote any executable transactions
 	for _, addr := range accounts {
@@ -1189,18 +1193,19 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 			continue // Just in case someone calls with a non existing account
 		}
 		// Drop all transactions that are deemed too old (low nonce)
+		log.Info("====debug Removed old queued transaction", "addr", addr.String(), "nonce", pool.currentState.GetNonce(addr))
 		forwards := list.Forward(pool.currentState.GetNonce(addr))
 		for _, tx := range forwards {
 			hash := tx.Hash()
 			pool.all.Remove(hash)
-			log.Trace("Removed old queued transaction", "hash", hash)
+			log.Info("====debug Removed old queued transaction", "hash", hash)
 		}
 		// Drop all transactions that are too costly (low balance or out of gas)
 		drops, _ := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
 		for _, tx := range drops {
 			hash := tx.Hash()
 			pool.all.Remove(hash)
-			log.Trace("Removed unpayable queued transaction", "hash", hash)
+			log.Info("====debug Removed unpayable queued transaction", "hash", hash)
 		}
 		queuedNofundsMeter.Mark(int64(len(drops)))
 
@@ -1209,7 +1214,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 		for _, tx := range readies {
 			hash := tx.Hash()
 			if pool.promoteTx(addr, hash, tx) {
-				log.Trace("Promoting queued transaction", "hash", hash)
+				log.Info("==== debug Promoting queued transaction", "hash", hash)
 				promoted = append(promoted, tx)
 			}
 		}

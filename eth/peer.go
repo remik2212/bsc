@@ -245,6 +245,7 @@ func (p *peer) announceTransactions() {
 				go func() {
 					if err := p.sendPooledTransactionHashes(pending); err != nil {
 						fail <- err
+						p.Log().Info("====debug announceTransactions exist because of fail", "err", err.Error())
 						return
 					}
 					close(done)
@@ -266,9 +267,11 @@ func (p *peer) announceTransactions() {
 			done = nil
 
 		case <-fail:
+			p.Log().Info("====debug announceTransactions exist because of fail", "peer", p.id)
 			return
 
 		case <-p.term:
+			p.Log().Info("====debug announceTransactions exist because of term", "peer", p.id)
 			return
 		}
 	}
