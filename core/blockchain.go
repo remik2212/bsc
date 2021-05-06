@@ -1494,6 +1494,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		// Full but not archive node, do proper garbage collection
 		triedb.Reference(root, common.Hash{}) // metadata reference to keep trie alive
 		bc.triegc.Push(root, -int64(block.NumberU64()))
+		log.Info("triegc push root")
 
 		if current := block.NumberU64(); current > TriesInMemory {
 			// If we exceeded our memory allowance, flush matured singleton nodes to disk
@@ -1543,12 +1544,17 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 			// Garbage collect anything below our required write retention
 			for !bc.triegc.Empty() {
 				root, number := bc.triegc.Pop()
+				log.Info("triegc pop", "number", -number)
 				if uint64(-number) > chosen {
+					log.Info("triegc push again", "number", -number, "chosen", chosen)
+
 					bc.triegc.Push(root, number)
 					break
 				}
 				triedb.Dereference(root.(common.Hash))
 			}
+			log.Info("triegc empty now")
+
 		}
 	}
 	// If the total difficulty is higher than our known, add it to the canonical chain
