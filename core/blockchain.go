@@ -1502,6 +1502,12 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 				limit       = common.StorageSize(bc.cacheConfig.TrieDirtyLimit) * 1024 * 1024
 			)
 			if nodes > limit || imgs > 4*1024*1024 {
+				if nodes > limit {
+					log.Info("node is larger than limit", "limit", limit)
+				} else {
+					log.Info("imgs is 4*1024*1024")
+
+				}
 				triedb.Cap(limit - ethdb.IdealBatchSize)
 			}
 			// Find the next state trie we need to commit
